@@ -1,4 +1,6 @@
 import React from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   MDBBtn,
   MDBContainer,
@@ -7,18 +9,32 @@ import {
   MDBCard,
   MDBCardBody,
   MDBInput,
-  MDBCheckbox,
+  MDBDropdown, // Import MDBDropdown and related components
+  MDBDropdownToggle,
+  MDBDropdownMenu,
+  MDBDropdownItem,
   MDBIcon
 } from 'mdb-react-ui-kit';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 
 function Signup() {
+
+  const navigate = useNavigate();
+  const handleLoginClick = () => {
+    navigate('/login'); 
+  };
+  
+const [roles,setRoles] = useState([]);
+const [selectedRole, setSelectedRole] = useState('');
+const [selectedRoleId, setSelectedRoleId] = useState('');
+
   const formik = useFormik({
     initialValues: {
       fullName: '',
       email: '',
       password: '',
+      role: '', // New field for dropdown
       subscribe: false,
     },
     validationSchema: Yup.object({
@@ -29,13 +45,55 @@ function Signup() {
       password: Yup.string()
         .min(6, 'Password must be at least 6 characters long')
         .required('Password is required'),
+      role: Yup.string().required('Role is required'),
     }),
-    onSubmit: (values) => {
-      console.log(values);
-      // You can reset the form or handle the form submission
-      // formik.resetForm();
+    onSubmit:async (values) => {
+     const payload = {
+      fullname: values.fullName,
+      email: values.email,
+      password: values.password,
+      roleId: selectedRoleId, 
+     };
+     try {
+      const response = await fetch ('http://localhost:5000/api/register',{
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+
+      if(response.ok){
+        navigate('/login')
+      }else{
+        console.log('registration failed:')
+      }
+     }catch(error){
+      console.log('Error during registration:', error)
+     }
     },
   });
+
+  useEffect(()=>{
+    const fetchRoles = async () => {
+      try{
+        const response = await fetch('http://localhost:5000/api/get-role');
+        const data = await response.json();
+        setRoles(data);   
+      }
+      catch(error){
+        console.log('Error fetching roles:', error)
+      }
+    }
+
+    fetchRoles();
+  }, [])
+  const handleRoleSelect = (role) => {
+    setSelectedRole(role.name); // Set the role name
+    setSelectedRoleId(role._id); // Store the role ID
+    formik.setFieldValue('role', role.name); // Update formik field value
+  };
 
   return (
     <MDBContainer fluid className='p-4 background-radial-gradient overflow-hidden signup-height'>
@@ -59,38 +117,36 @@ function Signup() {
 
           <MDBCard className='my-5 bg-glass'>
             <MDBCardBody className='p-5'>
-              <MDBRow>
-                <div className="text-center">
-                  <img src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/lotus.webp"
-                    style={{ width: '185px' }} alt="logo" />
-                </div>
+              <div className="text-center">
+                <img src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/lotus.webp"
+                  style={{ width: '185px' }} alt="logo" />
+              </div>
 
-                <MDBCol col='12'>
-                  <MDBInput
-                    wrapperClass='mt-1'
-                    label='Full name'
-                    id='fullName' // Use an ID that corresponds to your formik field
-                    type='text'
-                    value={formik.values.fullName} // Bind the value to formik
-                    onChange={formik.handleChange} // Correctly handle changes
-                    onBlur={formik.handleBlur} // Handle blur event
-                    invalid={formik.touched.fullName && Boolean(formik.errors.fullName)} // Show error if applicable
-                  />
-                  {formik.touched.fullName && formik.errors.fullName ? (
-                    <div className="text-danger">{formik.errors.fullName}</div>
-                  ) : null}
-                </MDBCol>
-              </MDBRow>
+              <MDBCol col='12'>
+                <MDBInput
+                  wrapperClass='mt-1'
+                  label='Full name'
+                  id='fullName'
+                  type='text'
+                  value={formik.values.fullName} 
+                  onChange={formik.handleChange} 
+                  onBlur={formik.handleBlur}
+                  invalid={formik.touched.fullName && Boolean(formik.errors.fullName)? 'true' : undefined}
+                />
+                {formik.touched.fullName && formik.errors.fullName ? (
+                  <div className="text-danger">{formik.errors.fullName}</div>
+                ) : null}
+              </MDBCol>
 
               <MDBInput
                 wrapperClass='mt-4'
                 label='Email'
-                id='email' // Use an ID that corresponds to your formik field
+                id='email' 
                 type='email'
                 value={formik.values.email}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
-                invalid={formik.touched.email && Boolean(formik.errors.email)}
+                invalid={formik.touched.email && Boolean(formik.errors.email)? 'true' : undefined}
               />
               {formik.touched.email && formik.errors.email ? (
                 <div className="text-danger">{formik.errors.email}</div>
@@ -99,41 +155,51 @@ function Signup() {
               <MDBInput
                 wrapperClass='mt-4'
                 label='Password'
-                id='password' // Use an ID that corresponds to your formik field
+                id='password' 
                 type='password'
                 value={formik.values.password}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
-                invalid={formik.touched.password && Boolean(formik.errors.password)}
+                invalid={formik.touched.password && Boolean(formik.errors.password)? 'true' : undefined}
               />
               {formik.touched.password && formik.errors.password ? (
                 <div className="text-danger">{formik.errors.password}</div>
               ) : null}
-              
 
-              {/* <div className='d-flex justify-content-center my-4'>
-                <MDBCheckbox
-                  name='subscribe'
-                  checked={formik.values.subscribe}
-                  onChange={formik.handleChange}
-                  id='flexCheckDefault'
-                  label='Subscribe to our newsletter'
-                />
-              </div> */}
+             <MDBDropdown group className='mt-2'>
+                  <MDBDropdownToggle color='danger'>{selectedRole || 'Select Role'}</MDBDropdownToggle>
+                  <MDBDropdownMenu>
+                    {roles.length > 0 ? (
+                      roles.map((role, index) => (
+                        <MDBDropdownItem link key={index} onClick={() => {
+                          setSelectedRole(role.name);
+                          formik.setFieldValue('role', role.name);
+                        }}>
+                          {role.name}
+                        </MDBDropdownItem>
+                      ))
+                    ) : (
+                      <MDBDropdownItem disabled link>No roles available</MDBDropdownItem>
+                    )}
+                  </MDBDropdownMenu>
+           </MDBDropdown>
+           {formik.touched.role && formik.errors.role ? (
+            <div className="text-danger">{formik.errors.role}</div>
+          ) : null}
 
               <MDBBtn
-                className="mb-4 my-5 w-100 gradient-custom-2"
-                onClick={formik.handleSubmit} // Use handleSubmit for form submission
-              >
-                Sign up
-              </MDBBtn>
+                className="mb-4 my-5 w-100 gradient-custom-2" type='submit'
+                onClick={formik.handleSubmit} 
+              >Sign up</MDBBtn>
 
               <div className="text-center">
                 <p>OR LOGIN WITH:</p>
                 <MDBBtn tag='a' color='orange' className='mx-2 with-google'>
                   <MDBIcon fab icon='google' size="sm" />
                 </MDBBtn>
-                <MDBBtn tag='a' color='orange' className='mx-2 with-google'>Login</MDBBtn>
+                <MDBBtn tag='a' color='orange' className='mx-2 with-google'
+                  onClick={handleLoginClick}
+                >Login</MDBBtn>
               </div>
             </MDBCardBody>
           </MDBCard>

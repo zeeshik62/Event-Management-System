@@ -100,13 +100,6 @@
   backdrop-filter: saturate(200%) blur(25px);
 }
 
-.signup-height {
-  height: 100vh; /* Full viewport height */
-  display: flex; /* Flexbox for alignment */
-  align-items: center; /* Center items vertically */
-  justify-content: center; /* Center items horizontally */
-}
-
 .TBO-color {
   color: hsl(190, 81%, 95%);
 }
